@@ -67,6 +67,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Type error deserializing")
+                    return Metadata(name: "", pathLower: "")
             }
         }
     }
@@ -137,6 +138,7 @@ public class Files {
                     return FileMetadata(name: name, pathLower: pathLower, clientModified: clientModified, serverModified: serverModified, rev: rev, size: size, id: id)
                 default:
                     assert(false, "Type error deserializing")
+                    return FileMetadata(name: "", pathLower: "", clientModified: NSDate(), serverModified: NSDate(), rev: "", size: 0)
             }
         }
     }
@@ -176,6 +178,7 @@ public class Files {
                     return FolderMetadata(name: name, pathLower: pathLower, id: id)
                 default:
                     assert(false, "Type error deserializing")
+                    return FolderMetadata(name: "", pathLower: "")
             }
         }
     }
@@ -204,6 +207,7 @@ public class Files {
                     return DeletedMetadata(name: name, pathLower: pathLower)
                 default:
                     assert(false, "Type error deserializing")
+                    return DeletedMetadata(name: "", pathLower: "")
             }
         }
     }
@@ -239,6 +243,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return GetMetadataError.Other
             }
         }
     }
@@ -271,6 +276,7 @@ public class Files {
                     return GetMetadataArg(path: path)
                 default:
                     assert(false, "Type error deserializing")
+                    return GetMetadataArg(path: "")
             }
         }
     }
@@ -438,6 +444,7 @@ public class Files {
                     return ListFolderArg(path: path, recursive: recursive)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderArg(path: "")
             }
         }
     }
@@ -484,9 +491,58 @@ public class Files {
                     return ListFolderResult(entries: entries, cursor: cursor, hasMore: hasMore)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderResult(entries: ArraySerializer(MetadataSerializer()).deserialize(.Null), cursor: "", hasMore: false)
             }
         }
     }
+<<<<<<< HEAD
+=======
+    /// Base class for errors returned by `list_folder`.
+    ///
+    /// - NotFound:
+    ///   There is no file or folder at the given path.
+    /// - NotFolder:
+    ///   Entry at path is not a folder.
+    public enum FolderPathError : Printable {
+        case NotFound
+        case NotFolder
+        public var description : String {
+            return "\(prepareJSONForSerialization(FolderPathErrorSerializer().serialize(self)))"
+        }
+    }
+    public class FolderPathErrorSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: FolderPathError) -> JSON {
+            switch value {
+                case .NotFound:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("not_found")
+                    return .Dictionary(d)
+                case .NotFolder:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("not_folder")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> FolderPathError {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "not_found":
+                            return FolderPathError.NotFound
+                        case "not_folder":
+                            return FolderPathError.NotFolder
+                        default:
+                            fatalError("Unknown tag \(tag)")
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return FolderPathError.NotFound
+            }
+        }
+    }
+>>>>>>> Fixes for missing return in functions.
     /// Error returned by `list_folder` and `list_folder/continue`.
     ///
     /// - Path
@@ -528,6 +584,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ListFolderError.Other
             }
         }
     }
@@ -560,6 +617,7 @@ public class Files {
                     return ListFolderContinueArg(cursor: cursor)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderContinueArg(cursor: "")
             }
         }
     }
@@ -613,6 +671,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ListFolderContinueError.Reset
             }
         }
     }
@@ -649,6 +708,243 @@ public class Files {
             }
         }
     }
+<<<<<<< HEAD
+=======
+    /// Errors from `download` when the file cannot be downloaded.
+    ///
+    /// - NotFound:
+    ///   The path is not found.
+    /// - IsFolder:
+    ///   The path refers to a folder. Only files can be downloaded.
+    public enum NoFileReason : Printable {
+        case NotFound
+        case IsFolder
+        public var description : String {
+            return "\(prepareJSONForSerialization(NoFileReasonSerializer().serialize(self)))"
+        }
+    }
+    public class NoFileReasonSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: NoFileReason) -> JSON {
+            switch value {
+                case .NotFound:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("not_found")
+                    return .Dictionary(d)
+                case .IsFolder:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("is_folder")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> NoFileReason {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "not_found":
+                            return NoFileReason.NotFound
+                        case "is_folder":
+                            return NoFileReason.IsFolder
+                        default:
+                            fatalError("Unknown tag \(tag)")
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return NoFileReason.NotFound
+            }
+        }
+    }
+    /// Error structure for `download`.
+    ///
+    /// :param: reason
+    ///        The path could not be downloaded. The value gives the reason.
+    public class NoFile: Printable {
+        public let reason : NoFileReason
+        public init(reason: NoFileReason) {
+            self.reason = reason
+        }
+        public var description : String {
+            return "\(prepareJSONForSerialization(NoFileSerializer().serialize(self)))"
+        }
+    }
+    public class NoFileSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: NoFile) -> JSON {
+            var output = [ 
+            "reason": NoFileReasonSerializer().serialize(value.reason),
+            ]
+            return .Dictionary(output)
+        }
+        public func deserialize(json: JSON) -> NoFile {
+            switch json {
+                case .Dictionary(let dict):
+                    let reason = NoFileReasonSerializer().deserialize(dict["reason"] ?? .Null)
+                    return NoFile(reason: reason)
+                default:
+                    assert(false, "Type error deserializing")
+                    let reason = NoFileReasonSerializer().deserialize(.Null)
+                    return NoFile(reason: reason)
+            }
+        }
+    }
+    /// Errors for `download` when download is forbidden.
+    ///
+    /// - Dmca:
+    ///   The download is forbidden because of a DMCA (U.S. Digital Millenium
+    ///   Copyright Act) takedown request.
+    /// - Other:
+    ///   The download is forbidden for some other reason.
+    public enum RestrictedReason : Printable {
+        case Dmca
+        case Other
+        public var description : String {
+            return "\(prepareJSONForSerialization(RestrictedReasonSerializer().serialize(self)))"
+        }
+    }
+    public class RestrictedReasonSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: RestrictedReason) -> JSON {
+            switch value {
+                case .Dmca:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("dmca")
+                    return .Dictionary(d)
+                case .Other:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("other")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> RestrictedReason {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "dmca":
+                            return RestrictedReason.Dmca
+                        case "other":
+                            return RestrictedReason.Other
+                        default:
+                            return RestrictedReason.Other
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return RestrictedReason.Other
+            }
+        }
+    }
+    /// Error structure for `download`.
+    ///
+    /// :param: reason
+    ///        The download is forbidden. The value gives the reason.
+    public class Restricted: Printable {
+        public let reason : RestrictedReason
+        public init(reason: RestrictedReason) {
+            self.reason = reason
+        }
+        public var description : String {
+            return "\(prepareJSONForSerialization(RestrictedSerializer().serialize(self)))"
+        }
+    }
+    public class RestrictedSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: Restricted) -> JSON {
+            var output = [ 
+            "reason": RestrictedReasonSerializer().serialize(value.reason),
+            ]
+            return .Dictionary(output)
+        }
+        public func deserialize(json: JSON) -> Restricted {
+            switch json {
+                case .Dictionary(let dict):
+                    let reason = RestrictedReasonSerializer().deserialize(dict["reason"] ?? .Null)
+                    return Restricted(reason: reason)
+                default:
+                    assert(false, "Type error deserializing")
+                    return Restricted(reason: RestrictedReasonSerializer().deserialize(.Null))
+            }
+        }
+    }
+    /// Errors for `download` when download is disallowed or forbidden.
+    ///
+    /// - Permission:
+    ///   The requesting user has no permission to access the file.
+    /// - Restricted:
+    ///   The download is forbidden; see the value for the reason.
+    public enum DisallowedReason : Printable {
+        case Permission
+        case Restricted(Files.Restricted)
+        public var description : String {
+            return "\(prepareJSONForSerialization(DisallowedReasonSerializer().serialize(self)))"
+        }
+    }
+    public class DisallowedReasonSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: DisallowedReason) -> JSON {
+            switch value {
+                case .Permission:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("permission")
+                    return .Dictionary(d)
+                case .Restricted(let arg):
+                    var d = Serialization.getFields(RestrictedSerializer().serialize(arg))
+                    d[".tag"] = .Str("restricted")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> DisallowedReason {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "permission":
+                            return DisallowedReason.Permission
+                        case "restricted":
+                            let v = RestrictedSerializer().deserialize(json)
+                            return DisallowedReason.Restricted(v)
+                        default:
+                            fatalError("Unknown tag \(tag)")
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return DisallowedReason.Permission
+            }
+        }
+    }
+    /// Error structure for `download`.
+    ///
+    /// :param: reason
+    ///        The reason why the download is disallowed.
+    public class Disallowed: Printable {
+        public let reason : DisallowedReason
+        public init(reason: DisallowedReason) {
+            self.reason = reason
+        }
+        public var description : String {
+            return "\(prepareJSONForSerialization(DisallowedSerializer().serialize(self)))"
+        }
+    }
+    public class DisallowedSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: Disallowed) -> JSON {
+            var output = [ 
+            "reason": DisallowedReasonSerializer().serialize(value.reason),
+            ]
+            return .Dictionary(output)
+        }
+        public func deserialize(json: JSON) -> Disallowed {
+            switch json {
+                case .Dictionary(let dict):
+                    let reason = DisallowedReasonSerializer().deserialize(dict["reason"] ?? .Null)
+                    return Disallowed(reason: reason)
+                default:
+                    assert(false, "Type error deserializing")
+                    return Disallowed(reason: DisallowedReasonSerializer().deserialize(.Null))
+            }
+        }
+    }
+>>>>>>> Fixes for missing return in functions.
     /// Errors from `download`.
     ///
     /// - Path
@@ -690,6 +986,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return DownloadError.Other
             }
         }
     }
@@ -727,8 +1024,142 @@ public class Files {
                     let path = Serialization._StringSerializer.deserialize(dict["path"] ?? .Null)
                     let rev = NullableSerializer(Serialization._StringSerializer).deserialize(dict["rev"] ?? .Null)
                     return DownloadArg(path: path, rev: rev)
+<<<<<<< HEAD
                 default:
                     assert(false, "Type error deserializing")
+=======
+                default:
+                    assert(false, "Type error deserializing")
+                    return DownloadArg(path: "", rev: nil)
+            }
+        }
+    }
+    /// Errors related to commit conflicts.
+    ///
+    /// - File:
+    ///   A file already exists at this path.
+    /// - Folder:
+    ///   A folder already exists at this path.
+    /// - AutorenameFailed:
+    ///   File could not be automatically renamed.
+    /// - Other:
+    ///   An unspecified error.
+    public enum CommitConflictError : Printable {
+        case File
+        case Folder
+        case AutorenameFailed
+        case Other
+        public var description : String {
+            return "\(prepareJSONForSerialization(CommitConflictErrorSerializer().serialize(self)))"
+        }
+    }
+    public class CommitConflictErrorSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: CommitConflictError) -> JSON {
+            switch value {
+                case .File:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("file")
+                    return .Dictionary(d)
+                case .Folder:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("folder")
+                    return .Dictionary(d)
+                case .AutorenameFailed:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("autorename_failed")
+                    return .Dictionary(d)
+                case .Other:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("other")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> CommitConflictError {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "file":
+                            return CommitConflictError.File
+                        case "folder":
+                            return CommitConflictError.Folder
+                        case "autorename_failed":
+                            return CommitConflictError.AutorenameFailed
+                        case "other":
+                            return CommitConflictError.Other
+                        default:
+                            return CommitConflictError.Other
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return CommitConflictError.Other
+            }
+        }
+    }
+    /// Errors from `upload`.
+    ///
+    /// - Conflict:
+    ///   A conflict prevented the commit. See the value for the reason.
+    /// - NoWritePermission:
+    ///   User does not have permission to write in the folder. An example of
+    ///   this is if the folder is a read-only shared folder.
+    /// - InsufficientQuota:
+    ///   User does not have sufficient space quota to save the file.
+    /// - Other:
+    ///   An unspecified error.
+    public enum CommitError : Printable {
+        case Conflict(Files.CommitConflictError)
+        case NoWritePermission
+        case InsufficientQuota
+        case Other
+        public var description : String {
+            return "\(prepareJSONForSerialization(CommitErrorSerializer().serialize(self)))"
+        }
+    }
+    public class CommitErrorSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: CommitError) -> JSON {
+            switch value {
+                case .Conflict(let arg):
+                    var d = ["conflict": CommitConflictErrorSerializer().serialize(arg)]
+                    d[".tag"] = .Str("conflict")
+                    return .Dictionary(d)
+                case .NoWritePermission:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("no_write_permission")
+                    return .Dictionary(d)
+                case .InsufficientQuota:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("insufficient_quota")
+                    return .Dictionary(d)
+                case .Other:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("other")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> CommitError {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "conflict":
+                            let v = CommitConflictErrorSerializer().deserialize(d["conflict"] ?? .Null)
+                            return CommitError.Conflict(v)
+                        case "no_write_permission":
+                            return CommitError.NoWritePermission
+                        case "insufficient_quota":
+                            return CommitError.InsufficientQuota
+                        case "other":
+                            return CommitError.Other
+                        default:
+                            return CommitError.Other
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return CommitError.Other
+>>>>>>> Fixes for missing return in functions.
             }
         }
     }
@@ -767,6 +1198,7 @@ public class Files {
                     return UploadWriteFailed(reason: reason, uploadSessionId: uploadSessionId)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadCommitError(reason: Files.CommitError.Other, uploadSessionId: "")
             }
         }
     }
@@ -844,6 +1276,7 @@ public class Files {
                     return UploadSessionOffsetError(correctOffset: correctOffset)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionOffsetError(correctOffset: 0)
             }
         }
     }
@@ -911,9 +1344,59 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return UploadSessionLookupError.Other
             }
         }
     }
+<<<<<<< HEAD
+=======
+    /// Errors for upload.
+    ///
+    /// - CommitFailed:
+    ///   The upload failed; the value explains the reason.
+    /// - Other:
+    ///   An unspecified error.
+    public enum UploadError : Printable {
+        case CommitFailed(Files.UploadCommitError)
+        case Other
+        public var description : String {
+            return "\(prepareJSONForSerialization(UploadErrorSerializer().serialize(self)))"
+        }
+    }
+    public class UploadErrorSerializer: JSONSerializer {
+        public init() { }
+        public func serialize(value: UploadError) -> JSON {
+            switch value {
+                case .CommitFailed(let arg):
+                    var d = Serialization.getFields(UploadCommitErrorSerializer().serialize(arg))
+                    d[".tag"] = .Str("commit_failed")
+                    return .Dictionary(d)
+                case .Other:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("other")
+                    return .Dictionary(d)
+            }
+        }
+        public func deserialize(json: JSON) -> UploadError {
+            switch json {
+                case .Dictionary(let d):
+                    let tag = Serialization.getTag(d)
+                    switch tag {
+                        case "commit_failed":
+                            let v = UploadCommitErrorSerializer().deserialize(json)
+                            return UploadError.CommitFailed(v)
+                        case "other":
+                            return UploadError.Other
+                        default:
+                            return UploadError.Other
+                    }
+                default:
+                    assert(false, "Failed to deserialize")
+                    return UploadError.Other
+            }
+        }
+    }
+>>>>>>> Fixes for missing return in functions.
     /// Errors for `upload_session/finish`.
     ///
     /// - LookupFailed:
@@ -966,6 +1449,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return UploadSessionFinishError.Other
             }
         }
     }
@@ -999,6 +1483,7 @@ public class Files {
                     return UploadSessionStartResult(sessionId: sessionId)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionStartResult(sessionId: "")
             }
         }
     }
@@ -1041,6 +1526,7 @@ public class Files {
                     return UploadSessionCursor(sessionId: sessionId, offset: offset)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionCursor(sessionId: "", offset: 0)
             }
         }
     }
@@ -1110,6 +1596,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return WriteMode.Add
             }
         }
     }
@@ -1175,6 +1662,7 @@ public class Files {
                     return CommitInfo(path: path, mode: mode, autorename: autorename, clientModified: clientModified, mute: mute)
                 default:
                     assert(false, "Type error deserializing")
+                    return CommitInfo(path: "", mode: Files.WriteMode.Add, autorename: false, clientModified: nil, mute: false)
             }
         }
     }
@@ -1212,6 +1700,7 @@ public class Files {
                     return UploadSessionFinishArg(cursor: cursor, commit: commit)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionFinishArg(cursor: UploadSessionCursorSerializer().deserialize(.Null), commit: CommitInfoSerializer().deserialize(.Null))
             }
         }
     }
@@ -1265,6 +1754,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SearchMode.Filename
             }
         }
     }
@@ -1329,6 +1819,7 @@ public class Files {
                     return SearchQuery(path: path, query: query, start: start, maxResults: maxResults, mode: mode)
                 default:
                     assert(false, "Type error deserializing")
+                    return SearchQuery(path: "", query: "", start: 0, maxResults: 0, mode: Files.SearchMode.Filename)
             }
         }
     }
@@ -1382,6 +1873,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SearchMatchType.Both
             }
         }
     }
@@ -1419,6 +1911,7 @@ public class Files {
                     return SearchMatch(matchType: matchType, metadata: metadata)
                 default:
                     assert(false, "Type error deserializing")
+                    return SearchMatch(matchType: SearchMatchTypeSerializer().deserialize(.Null), metadata: MetadataSerializer().deserialize(.Null))
             }
         }
     }
@@ -1465,6 +1958,7 @@ public class Files {
                     return SearchResults(matches: matches, more: more, start: start)
                 default:
                     assert(false, "Type error deserializing")
+                    return SearchResults(matches: ArraySerializer(SearchMatchSerializer()).deserialize(.Null), more: false, start: 0)
             }
         }
     }
@@ -1509,6 +2003,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SearchError.Other
             }
         }
     }
@@ -1736,6 +2231,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return PathError.Other
             }
         }
     }
@@ -1768,6 +2264,7 @@ public class Files {
                     return CreateFolderArg(path: path)
                 default:
                     assert(false, "Type error deserializing")
+                    return CreateFolderArg(path: "")
             }
         }
     }
@@ -1835,6 +2332,7 @@ public class Files {
                     return DeleteArg(path: path)
                 default:
                     assert(false, "Type error deserializing")
+                    return DeleteArg(path: "")
             }
         }
     }
@@ -1926,6 +2424,7 @@ public class Files {
                     return RelocationArg(fromPath: fromPath, toPath: toPath)
                 default:
                     assert(false, "Type error deserializing")
+                    return RelocationArg(fromPath: "", toPath: "")
             }
         }
     }
@@ -2016,6 +2515,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return RelocationError.Other
             }
         }
     }
