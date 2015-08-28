@@ -11,8 +11,8 @@ public enum CallError<ErrorType> : Printable {
     case RateLimitError
     case HTTPError(Int?, String?)
     case RouteError(Box<ErrorType>)
-    
-    
+
+
     public var description : String {
         switch self {
         case .InternalServerError(let code, let message):
@@ -59,7 +59,7 @@ func asciiEscape(s: String) -> String {
             esc = "\(char)"
         }
         out += esc
-        
+
     }
     return out
 }
@@ -74,21 +74,21 @@ public class BabelRequest<RType : JSONSerializer, EType : JSONSerializer> {
     let errorSerializer : EType
     let responseSerializer : RType
     let request : Request
-    
+
     init(client: BabelClient,
         host: String,
         route: String,
         responseSerializer: RType,
         errorSerializer: EType,
-        requestEncoder: (URLRequestConvertible, [String: AnyObject]?) -> (NSURLRequest, NSError?)) {
+        requestEncoder: (URLRequestConvertible, [String: AnyObject]?) -> (NSMutableURLRequest, NSError?)) {
             self.errorSerializer = errorSerializer
             self.responseSerializer = responseSerializer
             let url = "\(client.baseHosts[host]!)\(route)"
-            self.request = client.manager.request(.POST, url, parameters: [:], encoding: .Custom(requestEncoder))
+            self.request = client.manager.request(Method.POST, url, parameters: [:], encoding: ParameterEncoding.Custom(requestEncoder), headers: [:])
     }
-    
 
-    
+
+
     func handleResponseError(response: NSHTTPURLResponse?, data: NSData) -> CallError<EType.ValueType> {
         if let code = response?.statusCode {
             switch code {
@@ -130,14 +130,14 @@ public class BabelRpcRequest<RType : JSONSerializer, EType : JSONSerializer> : B
             return (mutableRequest, nil)
         }))
     }
-    
+
     /// Called when a request completes.
     ///
     /// :param: completionHandler A closure which takes a (response, error) and handles the result of the call appropriately.
     public func response(completionHandler: (RType.ValueType?, CallError<EType.ValueType>?) -> Void) -> Self {
         self.request.validate().response {
             (request, response, dataObj, error) -> Void in
-            let data = dataObj as! NSData
+            let data = dataObj as NSData!
             if error != nil {
                 completionHandler(nil, self.handleResponseError(response, data: data))
             } else {
@@ -159,12 +159,12 @@ public class BabelUploadRequest<RType : JSONSerializer, EType : JSONSerializer> 
                 let value = asciiEscape(utf8Decode(data))
                 mutableRequest.addValue(value, forHTTPHeaderField: "Dropbox-Api-Arg")
             }
-            
+
             return (mutableRequest, nil)
         }))
     }
-    
-    /// Called as the upload progresses. 
+
+    /// Called as the upload progresses.
     ///
     /// :param: closure
     ///         a callback taking three arguments (`bytesWritten`, `totalBytesWritten`, `totalBytesExpectedToWrite`)
@@ -173,16 +173,16 @@ public class BabelUploadRequest<RType : JSONSerializer, EType : JSONSerializer> 
         self.request.progress(closure: closure)
         return self
     }
-    
+
     /// Called when a request completes.
     ///
-    /// :param: completionHandler 
+    /// :param: completionHandler
     ///         A callback taking two arguments (`response`, `error`) which handles the result of the call appropriately.
     /// :returns: The request, for chaining purposes.
     public func response(completionHandler: (RType.ValueType?, CallError<EType.ValueType>?) -> Void) -> Self {
         self.request.validate().response {
             (request, response, dataObj, error) -> Void in
-            let data = dataObj as! NSData
+            let data = dataObj as NSData!
             if error != nil {
                 completionHandler(nil, self.handleResponseError(response, data: data))
             } else {
@@ -203,13 +203,13 @@ public class BabelDownloadRequest<RType : JSONSerializer, EType : JSONSerializer
                 let value = asciiEscape(utf8Decode(data))
                 mutableRequest.addValue(value, forHTTPHeaderField: "Dropbox-Api-Arg")
             }
-            
+
             return (mutableRequest, nil)
         }))
     }
-    
+
     /// Called as the download progresses
-    /// 
+    ///
     /// :param: closure
     ///         a callback taking three arguments (`bytesRead`, `totalBytesRead`, `totalBytesExpectedToRead`)
     /// :returns: The request, for chaining purposes.
@@ -217,7 +217,7 @@ public class BabelDownloadRequest<RType : JSONSerializer, EType : JSONSerializer
         self.request.progress(closure: closure)
         return self
     }
-    
+
     /// Called when a request completes.
     ///
     /// :param: completionHandler
@@ -226,14 +226,14 @@ public class BabelDownloadRequest<RType : JSONSerializer, EType : JSONSerializer
     public func response(completionHandler: ( (RType.ValueType, NSData)?, CallError<EType.ValueType>?) -> Void) -> Self {
         self.request.validate().response {
             (request, response, dataObj, error) -> Void in
-            let data = dataObj as! NSData
+            let data = dataObj as NSData!
             if error != nil {
                 completionHandler(nil, self.handleResponseError(response, data: data))
             } else {
                 let result = response!.allHeaderFields["Dropbox-Api-Result"] as! String
                 let resultData = result.dataUsingEncoding(NSUTF8StringEncoding, allowLossyConversion: false)!
                 let resultObject = self.responseSerializer.deserialize(parseJSON(resultData))
-                
+
                 completionHandler( (resultObject, data), nil)
             }
         }
@@ -244,14 +244,13 @@ public class BabelDownloadRequest<RType : JSONSerializer, EType : JSONSerializer
 /// A dropbox API client
 public class BabelClient {
     var baseHosts : [String : String]
-    
-    var manager : Manager
-    
 
-    
+    var manager : Manager
+
+
+
     public init(manager : Manager, baseHosts : [String : String]) {
         self.baseHosts = baseHosts
         self.manager = manager
     }
 }
-
