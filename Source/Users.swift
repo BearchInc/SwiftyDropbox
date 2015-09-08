@@ -20,8 +20,8 @@ public class Users {
     public class GetAccountArgSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: GetAccountArg) -> JSON {
-            let output = [ 
-            "account_id": Serialization._StringSerializer.serialize(value.accountId),
+            let output = [
+              "account_id": Serialization._StringSerializer.serialize(value.accountId),
             ]
             return .Dictionary(output)
         }
@@ -156,9 +156,9 @@ public class Users {
     public class AccountSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: Account) -> JSON {
-            let output = [ 
-            "account_id": Serialization._StringSerializer.serialize(value.accountId),
-            "name": NameSerializer().serialize(value.name),
+            let output = [
+              "account_id": Serialization._StringSerializer.serialize(value.accountId),
+              "name": NameSerializer().serialize(value.name),
             ]
             return .Dictionary(output)
         }
@@ -192,10 +192,10 @@ public class Users {
     public class BasicAccountSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: BasicAccount) -> JSON {
-            let output = [ 
-            "account_id": Serialization._StringSerializer.serialize(value.accountId),
-            "name": NameSerializer().serialize(value.name),
-            "is_teammate": Serialization._BoolSerializer.serialize(value.isTeammate),
+            let output = [
+              "account_id": Serialization._StringSerializer.serialize(value.accountId),
+              "name": NameSerializer().serialize(value.name),
+              "is_teammate": Serialization._BoolSerializer.serialize(value.isTeammate),
             ]
             return .Dictionary(output)
         }
@@ -263,16 +263,16 @@ public class Users {
     public class FullAccountSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: FullAccount) -> JSON {
-            let output = [ 
-            "account_id": Serialization._StringSerializer.serialize(value.accountId),
-            "name": NameSerializer().serialize(value.name),
-            "email": Serialization._StringSerializer.serialize(value.email),
-            "locale": Serialization._StringSerializer.serialize(value.locale),
-            "referral_link": Serialization._StringSerializer.serialize(value.referralLink),
-            "is_paired": Serialization._BoolSerializer.serialize(value.isPaired),
-            "account_type": AccountTypeSerializer().serialize(value.accountType),
-            "country": NullableSerializer(Serialization._StringSerializer).serialize(value.country),
-            "team": NullableSerializer(TeamSerializer()).serialize(value.team),
+            let output = [
+              "account_id": Serialization._StringSerializer.serialize(value.accountId),
+              "name": NameSerializer().serialize(value.name),
+              "email": Serialization._StringSerializer.serialize(value.email),
+              "locale": Serialization._StringSerializer.serialize(value.locale),
+              "referral_link": Serialization._StringSerializer.serialize(value.referralLink),
+              "is_paired": Serialization._BoolSerializer.serialize(value.isPaired),
+              "account_type": AccountTypeSerializer().serialize(value.accountType),
+              "country": NullableSerializer(Serialization._StringSerializer).serialize(value.country),
+              "team": NullableSerializer(TeamSerializer()).serialize(value.team),
             ]
             return .Dictionary(output)
         }
@@ -317,9 +317,9 @@ public class Users {
     public class TeamSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: Team) -> JSON {
-            let output = [ 
-            "id": Serialization._StringSerializer.serialize(value.id),
-            "name": Serialization._StringSerializer.serialize(value.name),
+            let output = [
+              "id": Serialization._StringSerializer.serialize(value.id),
+              "name": Serialization._StringSerializer.serialize(value.name),
             ]
             return .Dictionary(output)
         }
@@ -370,11 +370,11 @@ public class Users {
     public class NameSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: Name) -> JSON {
-            let output = [ 
-            "given_name": Serialization._StringSerializer.serialize(value.givenName),
-            "surname": Serialization._StringSerializer.serialize(value.surname),
-            "familiar_name": Serialization._StringSerializer.serialize(value.familiarName),
-            "display_name": Serialization._StringSerializer.serialize(value.displayName),
+            let output = [
+              "given_name": Serialization._StringSerializer.serialize(value.givenName),
+              "surname": Serialization._StringSerializer.serialize(value.surname),
+              "familiar_name": Serialization._StringSerializer.serialize(value.familiarName),
+              "display_name": Serialization._StringSerializer.serialize(value.displayName),
             ]
             return .Dictionary(output)
         }
@@ -413,9 +413,9 @@ public class Users {
     public class SpaceUsageSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: SpaceUsage) -> JSON {
-            let output = [ 
-            "used": Serialization._UInt64Serializer.serialize(value.used),
-            "allocation": SpaceAllocationSerializer().serialize(value.allocation),
+            let output = [
+              "used": Serialization._UInt64Serializer.serialize(value.used),
+              "allocation": SpaceAllocationSerializer().serialize(value.allocation),
             ]
             return .Dictionary(output)
         }
@@ -427,6 +427,7 @@ public class Users {
                     return SpaceUsage(used: used, allocation: allocation)
                 default:
                     assert(false, "Type error deserializing")
+                    return SpaceUsage(used: 0, allocation: Users.SpaceAllocation.Other)
             }
         }
     }
@@ -481,6 +482,7 @@ public class Users {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SpaceAllocation.Other
             }
         }
     }
@@ -501,8 +503,8 @@ public class Users {
     public class IndividualSpaceAllocationSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: IndividualSpaceAllocation) -> JSON {
-            let output = [ 
-            "allocated": Serialization._UInt64Serializer.serialize(value.allocated),
+            let output = [
+              "allocated": Serialization._UInt64Serializer.serialize(value.allocated),
             ]
             return .Dictionary(output)
         }
@@ -513,6 +515,7 @@ public class Users {
                     return IndividualSpaceAllocation(allocated: allocated)
                 default:
                     assert(false, "Type error deserializing")
+                    return IndividualSpaceAllocation(allocated: 0)
             }
         }
     }
@@ -538,9 +541,9 @@ public class Users {
     public class TeamSpaceAllocationSerializer: JSONSerializer {
         public init() { }
         public func serialize(value: TeamSpaceAllocation) -> JSON {
-            let output = [ 
-            "used": Serialization._UInt64Serializer.serialize(value.used),
-            "allocated": Serialization._UInt64Serializer.serialize(value.allocated),
+            let output = [
+              "used": Serialization._UInt64Serializer.serialize(value.used),
+              "allocated": Serialization._UInt64Serializer.serialize(value.allocated),
             ]
             return .Dictionary(output)
         }
@@ -552,7 +555,7 @@ public class Users {
                     return TeamSpaceAllocation(used: used, allocated: allocated)
                 default:
                     assert(false, "Type error deserializing")
-                    return SpaceUsage(allocated: 0, used: 0)
+                    return TeamSpaceAllocation(used: 0, allocated: 0)
             }
         }
     }
