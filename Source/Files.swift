@@ -67,6 +67,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Type error deserializing")
+                    return Metadata(name: "", pathLower: "")
             }
         }
     }
@@ -137,6 +138,7 @@ public class Files {
                     return FileMetadata(name: name, pathLower: pathLower, clientModified: clientModified, serverModified: serverModified, rev: rev, size: size, id: id)
                 default:
                     assert(false, "Type error deserializing")
+                    return FileMetadata(name: "", pathLower: "", clientModified: NSDate(), serverModified: NSDate(), rev: "", size: 0)
             }
         }
     }
@@ -176,6 +178,7 @@ public class Files {
                     return FolderMetadata(name: name, pathLower: pathLower, id: id)
                 default:
                     assert(false, "Type error deserializing")
+                    return FolderMetadata(name: "", pathLower: "")
             }
         }
     }
@@ -204,6 +207,7 @@ public class Files {
                     return DeletedMetadata(name: name, pathLower: pathLower)
                 default:
                     assert(false, "Type error deserializing")
+                    return DeletedMetadata(name: "", pathLower: "")
             }
         }
     }
@@ -211,6 +215,8 @@ public class Files {
     ///
     /// - Path
     public enum GetMetadataError : CustomStringConvertible {
+        case NotFound
+        case Other
         case Path(Files.LookupError)
         public var description : String {
             return "\(prepareJSONForSerialization(GetMetadataErrorSerializer().serialize(self)))"
@@ -223,6 +229,14 @@ public class Files {
                 case .Path(let arg):
                     var d = ["path": LookupErrorSerializer().serialize(arg)]
                     d[".tag"] = .Str("path")
+                    return .Dictionary(d)
+                case .NotFound:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("not_found")
+                    return .Dictionary(d)
+                case .Other:
+                    var d = [String : JSON]()
+                    d[".tag"] = .Str("other")
                     return .Dictionary(d)
             }
         }
@@ -239,6 +253,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return GetMetadataError.Other
             }
         }
     }
@@ -271,6 +286,7 @@ public class Files {
                     return GetMetadataArg(path: path)
                 default:
                     assert(false, "Type error deserializing")
+                    return GetMetadataArg(path: "")
             }
         }
     }
@@ -314,6 +330,7 @@ public class Files {
                     return ListFolderLongpollArg(cursor: cursor, timeout: timeout)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderLongpollArg(cursor: "")
             }
         }
     }
@@ -354,6 +371,7 @@ public class Files {
                     return ListFolderLongpollResult(changes: changes, backoff: backoff)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderLongpollResult(changes: false)
             }
         }
     }
@@ -398,6 +416,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ListFolderLongpollError.Other
             }
         }
     }
@@ -438,6 +457,7 @@ public class Files {
                     return ListFolderArg(path: path, recursive: recursive)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderArg(path: "")
             }
         }
     }
@@ -484,6 +504,7 @@ public class Files {
                     return ListFolderResult(entries: entries, cursor: cursor, hasMore: hasMore)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderResult(entries: ArraySerializer(MetadataSerializer()).deserialize(.Null), cursor: "", hasMore: false)
             }
         }
     }
@@ -528,6 +549,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ListFolderError.Other
             }
         }
     }
@@ -560,6 +582,7 @@ public class Files {
                     return ListFolderContinueArg(cursor: cursor)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderContinueArg(cursor: "")
             }
         }
     }
@@ -613,6 +636,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ListFolderContinueError.Reset
             }
         }
     }
@@ -646,6 +670,7 @@ public class Files {
                     return ListFolderGetLatestCursorResult(cursor: cursor)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListFolderGetLatestCursorResult(cursor: "")
             }
         }
     }
@@ -690,6 +715,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return DownloadError.Other
             }
         }
     }
@@ -729,6 +755,7 @@ public class Files {
                     return DownloadArg(path: path, rev: rev)
                 default:
                     assert(false, "Type error deserializing")
+                    return DownloadArg(path: "", rev: nil)
             }
         }
     }
@@ -767,6 +794,7 @@ public class Files {
                     return UploadWriteFailed(reason: reason, uploadSessionId: uploadSessionId)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadWriteFailed(reason: WriteError.Other, uploadSessionId: "")
             }
         }
     }
@@ -812,6 +840,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return UploadError.Other
             }
         }
     }
@@ -844,6 +873,7 @@ public class Files {
                     return UploadSessionOffsetError(correctOffset: correctOffset)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionOffsetError(correctOffset: 0)
             }
         }
     }
@@ -911,6 +941,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return UploadSessionLookupError.Other
             }
         }
     }
@@ -966,6 +997,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return UploadSessionFinishError.Other
             }
         }
     }
@@ -999,6 +1031,7 @@ public class Files {
                     return UploadSessionStartResult(sessionId: sessionId)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionStartResult(sessionId: "")
             }
         }
     }
@@ -1041,6 +1074,7 @@ public class Files {
                     return UploadSessionCursor(sessionId: sessionId, offset: offset)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionCursor(sessionId: "", offset: 0)
             }
         }
     }
@@ -1110,6 +1144,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return WriteMode.Add
             }
         }
     }
@@ -1175,6 +1210,7 @@ public class Files {
                     return CommitInfo(path: path, mode: mode, autorename: autorename, clientModified: clientModified, mute: mute)
                 default:
                     assert(false, "Type error deserializing")
+                    return CommitInfo(path: "", mode: Files.WriteMode.Add, autorename: false, clientModified: nil, mute: false)
             }
         }
     }
@@ -1212,6 +1248,7 @@ public class Files {
                     return UploadSessionFinishArg(cursor: cursor, commit: commit)
                 default:
                     assert(false, "Type error deserializing")
+                    return UploadSessionFinishArg(cursor: UploadSessionCursorSerializer().deserialize(.Null), commit: CommitInfoSerializer().deserialize(.Null))
             }
         }
     }
@@ -1265,6 +1302,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SearchMode.Filename
             }
         }
     }
@@ -1329,6 +1367,7 @@ public class Files {
                     return SearchQuery(path: path, query: query, start: start, maxResults: maxResults, mode: mode)
                 default:
                     assert(false, "Type error deserializing")
+                    return SearchQuery(path: "", query: "", start: 0, maxResults: 0, mode: Files.SearchMode.Filename)
             }
         }
     }
@@ -1382,6 +1421,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SearchMatchType.Both
             }
         }
     }
@@ -1419,6 +1459,7 @@ public class Files {
                     return SearchMatch(matchType: matchType, metadata: metadata)
                 default:
                     assert(false, "Type error deserializing")
+                    return SearchMatch(matchType: SearchMatchTypeSerializer().deserialize(.Null), metadata: MetadataSerializer().deserialize(.Null))
             }
         }
     }
@@ -1465,6 +1506,7 @@ public class Files {
                     return SearchResults(matches: matches, more: more, start: start)
                 default:
                     assert(false, "Type error deserializing")
+                    return SearchResults(matches: ArraySerializer(SearchMatchSerializer()).deserialize(.Null), more: false, start: 0)
             }
         }
     }
@@ -1509,6 +1551,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return SearchError.Other
             }
         }
     }
@@ -1592,6 +1635,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return LookupError.Other
             }
         }
     }
@@ -1674,6 +1718,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return WriteError.Other
             }
         }
     }
@@ -1736,6 +1781,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return WriteConflictError.Other
             }
         }
     }
@@ -1768,6 +1814,7 @@ public class Files {
                     return CreateFolderArg(path: path)
                 default:
                     assert(false, "Type error deserializing")
+                    return CreateFolderArg(path: "")
             }
         }
     }
@@ -1803,6 +1850,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return CreateFolderError.Path(WriteError.Other)
             }
         }
     }
@@ -1835,6 +1883,7 @@ public class Files {
                     return DeleteArg(path: path)
                 default:
                     assert(false, "Type error deserializing")
+                    return DeleteArg(path: "")
             }
         }
     }
@@ -1887,6 +1936,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return DeleteError.Other
             }
         }
     }
@@ -1926,6 +1976,7 @@ public class Files {
                     return RelocationArg(fromPath: fromPath, toPath: toPath)
                 default:
                     assert(false, "Type error deserializing")
+                    return RelocationArg(fromPath: "", toPath: "")
             }
         }
     }
@@ -2016,6 +2067,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return RelocationError.Other
             }
         }
     }
@@ -2087,6 +2139,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ThumbnailSize.W32h32
             }
         }
     }
@@ -2129,6 +2182,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ThumbnailFormat.Jpeg
             }
         }
     }
@@ -2175,6 +2229,7 @@ public class Files {
                     return ThumbnailArg(path: path, format: format, size: size)
                 default:
                     assert(false, "Type error deserializing")
+                    return ThumbnailArg(path: "", format: ThumbnailFormat.Jpeg, size: ThumbnailSize.W32h32)
             }
         }
     }
@@ -2238,6 +2293,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ThumbnailError.ConversionError
             }
         }
     }
@@ -2277,6 +2333,7 @@ public class Files {
                     return PreviewArg(path: path, rev: rev)
                 default:
                     assert(false, "Type error deserializing")
+                    return PreviewArg(path: "", rev: "")
             }
         }
     }
@@ -2341,6 +2398,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return PreviewError.UnsupportedContent
             }
         }
     }
@@ -2380,6 +2438,7 @@ public class Files {
                     return ListRevisionsArg(path: path, limit: limit)
                 default:
                     assert(false, "Type error deserializing")
+                    return ListRevisionsArg(path: "", limit: 0)
             }
         }
     }
@@ -2415,6 +2474,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return ListRevisionsError.Path(LookupError.Other)
             }
         }
     }
@@ -2453,6 +2513,10 @@ public class Files {
                     return ListRevisionsResult(isDeleted: isDeleted, entries: entries)
                 default:
                     assert(false, "Type error deserializing")
+
+                    let emptyFileMetaData:FileMetadata = FileMetadata(name: "", pathLower: "", clientModified: NSDate(), serverModified: NSDate(), rev: "", size: 0)
+                    let entries = [emptyFileMetaData]
+                    return ListRevisionsResult(isDeleted: false, entries: entries)
             }
         }
     }
@@ -2492,6 +2556,7 @@ public class Files {
                     return RestoreArg(path: path, rev: rev)
                 default:
                     assert(false, "Type error deserializing")
+                    return RestoreArg(path: "", rev: "")
             }
         }
     }
@@ -2547,6 +2612,7 @@ public class Files {
                     }
                 default:
                     assert(false, "Failed to deserialize")
+                    return RestoreError.InvalidRevision
             }
         }
     }

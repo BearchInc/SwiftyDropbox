@@ -11,7 +11,7 @@ public enum JSON {
 }
 
 func objectToJSON(json : AnyObject) -> JSON {
-
+    
     switch json {
     case is NSNull:
         return .Null
@@ -76,7 +76,7 @@ func dumpJSON(json: JSON) -> NSData? {
 func parseJSON(data: NSData) -> JSON {
     let obj: AnyObject = try! NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments)
     return objectToJSON(obj)
-
+    
 }
 
 
@@ -90,7 +90,7 @@ public class VoidSerializer : JSONSerializer {
     public func serialize(value: Void) -> JSON {
         return .Null
     }
-
+    
     public func deserialize(json: JSON) -> Void {
         switch json {
         case .Null:
@@ -98,23 +98,23 @@ public class VoidSerializer : JSONSerializer {
         default:
             assert(false, "Type error deserializing")
         }
-
+        
     }
 }
 
 
 public class ArraySerializer<T : JSONSerializer> : JSONSerializer {
-
+    
     var elementSerializer : T
-
+    
     init(_ elementSerializer: T) {
         self.elementSerializer = elementSerializer
     }
-
+    
     public func serialize(arr : Array<T.ValueType>) -> JSON {
         return .Array(arr.map { self.elementSerializer.serialize($0) } )
     }
-
+    
     public func deserialize(json : JSON) -> Array<T.ValueType> {
         switch json {
         case .Array(let arr):
@@ -130,7 +130,7 @@ public class StringSerializer : JSONSerializer {
     public func serialize(value : String) -> JSON {
         return .Str(value)
     }
-
+    
     public func deserialize(json: JSON) -> String {
         switch (json) {
         case .Str(let s):
@@ -143,9 +143,9 @@ public class StringSerializer : JSONSerializer {
 }
 
 public class NSDateSerializer : JSONSerializer {
-
+    
     var dateFormatter : NSDateFormatter
-
+    
     private func convertFormat(format: String) -> String? {
         func symbolForToken(token: String) -> String {
             switch token {
@@ -234,8 +234,8 @@ public class NSDateSerializer : JSONSerializer {
         }
         return newFormat
     }
-
-
+    
+    
     init(_ dateFormat: String) {
         self.dateFormatter = NSDateFormatter()
         dateFormatter.dateFormat = self.convertFormat(dateFormat)
@@ -243,7 +243,7 @@ public class NSDateSerializer : JSONSerializer {
     public func serialize(value: NSDate) -> JSON {
         return .Str(self.dateFormatter.stringFromDate(value))
     }
-
+    
     public func deserialize(json: JSON) -> NSDate {
         switch json {
         case .Str(let s):
@@ -274,7 +274,7 @@ public class UInt64Serializer : JSONSerializer {
     public func serialize(value : UInt64) -> JSON {
         return .Number(NSNumber(unsignedLongLong: value))
     }
-
+    
     public func deserialize(json : JSON) -> UInt64 {
         switch json {
         case .Number(let n):
@@ -290,7 +290,7 @@ public class Int64Serializer : JSONSerializer {
     public func serialize(value : Int64) -> JSON {
         return .Number(NSNumber(longLong: value))
     }
-
+    
     public func deserialize(json : JSON) -> Int64 {
         switch json {
         case .Number(let n):
@@ -306,7 +306,7 @@ public class Int32Serializer : JSONSerializer {
     public func serialize(value : Int32) -> JSON {
         return .Number(NSNumber(int: value))
     }
-
+    
     public func deserialize(json : JSON) -> Int32 {
         switch json {
         case .Number(let n):
@@ -321,7 +321,7 @@ public class UInt32Serializer : JSONSerializer {
     public func serialize(value : UInt32) -> JSON {
         return .Number(NSNumber(unsignedInt: value))
     }
-
+    
     public func deserialize(json : JSON) -> UInt32 {
         switch json {
         case .Number(let n):
@@ -337,7 +337,7 @@ public class NSDataSerializer : JSONSerializer {
     public func serialize(value : NSData) -> JSON {
         return .Str(value.base64EncodedStringWithOptions([]))
     }
-
+    
     public func deserialize(json: JSON) -> NSData {
         switch(json) {
         case .Str(let s):
@@ -353,7 +353,7 @@ public class DoubleSerializer : JSONSerializer {
     public func serialize(value: Double) -> JSON {
         return .Number(NSNumber(double: value))
     }
-
+    
     public func deserialize(json: JSON) -> Double {
         switch json {
         case .Number(let n):
@@ -367,13 +367,13 @@ public class DoubleSerializer : JSONSerializer {
 
 
 public class NullableSerializer<T : JSONSerializer> : JSONSerializer {
-
+    
     var internalSerializer : T
-
+    
     init(_ serializer : T) {
         self.internalSerializer = serializer
     }
-
+    
     public func serialize(value : Optional<T.ValueType>) -> JSON {
         if let v = value {
             return internalSerializer.serialize(v)
@@ -381,7 +381,7 @@ public class NullableSerializer<T : JSONSerializer> : JSONSerializer {
             return .Null
         }
     }
-
+    
     public func deserialize(json: JSON) -> Optional<T.ValueType> {
         switch json {
         case .Null:
@@ -399,11 +399,11 @@ struct Serialization {
     static var _UInt32Serializer = UInt32Serializer()
     static var _Int64Serializer = Int64Serializer()
     static var _Int32Serializer = Int32Serializer()
-
+    
     static var _VoidSerializer = VoidSerializer()
     static var _NSDataSerializer = NSDataSerializer()
     static var _DoubleSerializer = DoubleSerializer()
-
+    
     static func getFields(json : JSON) -> [String : JSON] {
         switch json {
         case .Dictionary(let dict):
@@ -412,9 +412,9 @@ struct Serialization {
             fatalError("Type error")
         }
     }
-
+    
     static func getTag(d: [String : JSON]) -> String {
         return _StringSerializer.deserialize(d[".tag"]!)
     }
-
+    
 }
