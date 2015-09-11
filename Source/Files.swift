@@ -2689,9 +2689,24 @@ extension BabelClient {
     /// :param: rev
     ///        Optional revision, taken from the corresponding `Metadata` field.
     public func filesDownload(path path: String, rev: String? = nil) -> BabelDownloadRequest<Files.FileMetadataSerializer, Files.DownloadErrorSerializer> {
-        let request = Files.DownloadArg(path: path, rev: rev)
-        return BabelDownloadRequest(client: self, host: "content", route: "/files/download", params: Files.DownloadArgSerializer().serialize(request), responseSerializer: Files.FileMetadataSerializer(), errorSerializer: Files.DownloadErrorSerializer())
+
+        let (route, params) = routeWithFileNameParams(path: path, rev: rev)
+        return BabelDownloadRequest(client: self, host: "content", route: route, params: params, responseSerializer: Files.FileMetadataSerializer(), errorSerializer: Files.DownloadErrorSerializer())
     }
+
+    private func routeWithFileNameParams(path path: String, rev: String? = nil) -> (String, JSON) {
+        let request = Files.DownloadArg(path: path, rev: rev)
+        var route = "/files/download"
+
+        let params = Files.DownloadArgSerializer().serialize(request)
+        if let data = dumpJSON(params) {
+            let value = asciiEscape(utf8Decode(data))
+            route = route + "?arg=" + value.stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())!
+        }
+
+        return (route, params)
+    }
+
     /// Start a new upload session. This is used to upload a single file with
     /// multiple calls.
     ///
