@@ -2849,8 +2849,24 @@ extension BabelClient {
     ///        The size for the thumbnail image.
     public func filesGetThumbnail(path path: String, format: Files.ThumbnailFormat = .Jpeg, size: Files.ThumbnailSize = .W64h64) -> BabelDownloadRequest<Files.FileMetadataSerializer, Files.ThumbnailErrorSerializer> {
         let request = Files.ThumbnailArg(path: path, format: format, size: size)
-        return BabelDownloadRequest(client: self, host: "content", route: "/files/get_thumbnail", params: Files.ThumbnailArgSerializer().serialize(request), responseSerializer: Files.FileMetadataSerializer(), errorSerializer: Files.ThumbnailErrorSerializer())
+
+        let (route, params) = routeWithFileNameParamsForThumbnail(route: "/files/get_thumbnail", request: request)
+
+        return BabelDownloadRequest(client: self, host: "content", route: route, params: params, responseSerializer: Files.FileMetadataSerializer(), errorSerializer: Files.ThumbnailErrorSerializer())
+    }    
+    private func routeWithFileNameParamsForThumbnail(route baseRoute: String, request: Files.ThumbnailArg) -> (String, JSON) {
+        var route = baseRoute
+
+        let paramsInJson = Files.ThumbnailArgSerializer().serialize(request)
+
+        if let data = dumpJSON(paramsInJson) {
+            let value = asciiEscape(utf8Decode(data))
+            route = route + "?arg=" + value.stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())!
+        }
+
+        return (route, paramsInJson)
     }
+
     /// Get a preview for a file. Currently previews are only generated for the
     /// files with  the following extensions: .doc, .docx, .docm, .ppt, .pps,
     /// .ppsx, .ppsm, .pptx, .pptm,  .xls, .xlsx, .xlsm, .rtf
